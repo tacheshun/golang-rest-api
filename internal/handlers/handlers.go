@@ -16,11 +16,6 @@ type App struct {
 	DB     *sql.DB
 }
 
-func NewApp(router *mux.Router, DB *sql.DB) *App {
-	return &App{Router: router, DB: DB}
-}
-
-
 func (a *App) initializeRoutes() {
 	a.Router.HandleFunc("/products", a.GetProducts).Methods("GET")
 	a.Router.HandleFunc("/product", a.CreateProduct).Methods("POST")
