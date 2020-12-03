@@ -12,13 +12,13 @@ services:
       - '--web.console.templates=/usr/share/prometheus/consoles'
     ports:
       - 9090:9090
-  app:
-    build: .
-    restart: always
-    ports:
-      - 8000:8000
-    depends_on:
-      - prometheus
+#  app:
+#    build: .
+#    restart: always
+#    ports:
+#      - 8000:8000
+#    depends_on:
+#      - prometheus
 
   cadvisor:
     image: google/cadvisor
@@ -48,7 +48,7 @@ services:
     ports:
       - "5432:5432"
     environment:
-      POSTGRES_DB: rest_api_database?sslmode=disable
+      POSTGRES_DB: postgres?sslmode=disable
       POSTGRES_USER: marius
       POSTGRES_PASSWORD: magic
       POSTGRES_SSLMODE: disable
