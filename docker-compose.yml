@@ -12,6 +12,23 @@ services:
       - '--web.console.templates=/usr/share/prometheus/consoles'
     ports:
       - 9090:9090
+  app:
+    build: .
+    restart: always
+    ports:
+      - 8000:8000
+    depends_on:
+      - prometheus
+
+  cadvisor:
+    image: google/cadvisor
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:rw
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+    ports:
+      - 8080:8080
 
   grafana:
     image: grafana/grafana
