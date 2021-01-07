@@ -3,22 +3,25 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	guuid "github.com/google/uuid"
 	"github.com/tacheshun/golang-rest-api/internal/handlers"
 	"log"
 	"net/http"
 	"net/http/httptest"
 	"os"
-	"strconv"
 	"testing"
 )
 
 const tableCreationQuery = `CREATE TABLE IF NOT EXISTS products
 (
-    id SERIAL,
-    name TEXT NOT NULL,
-    price NUMERIC(10,2) NOT NULL DEFAULT 0.00,
-    CONSTRAINT products_pkey PRIMARY KEY (id)
-)`
+    id serial not null constraint products_pkey primary key,
+    name text not null,
+    price numeric(10,2) default 0.00 not null,
+    created timestamp default CURRENT_TIMESTAMP,
+    modified timestamp default CURRENT_TIMESTAMP
+);
+alter table products owner to marius;
+`
 
 var a handlers.App
 
@@ -54,14 +57,11 @@ func checkResponseCode(t *testing.T, expected, actual int) {
 	}
 }
 
-
 func addProducts(count int) {
-	if count < 1 {
-		count = 1
-	}
+	id := guuid.New()
 
 	for i := 0; i < count; i++ {
-		a.DB.Exec("INSERT INTO products(name, price) VALUES($1, $2)", "Product "+strconv.Itoa(i), (i+1.0)*10)
+		a.DB.Exec("INSERT INTO products(name, price) VALUES($1, $2)", "Product " + id.String(), (i+1.0)*10)
 	}
 }
 
@@ -122,7 +122,7 @@ func TestCreateProduct(t *testing.T) {
 
 func TestGetProduct(t *testing.T) {
 	clearTable()
-	addProducts(1)
+	addProducts(3)
 
 	req, _ := http.NewRequest("GET", "/product/1", nil)
 	response := executeRequest(req)
@@ -132,7 +132,7 @@ func TestGetProduct(t *testing.T) {
 
 func TestUpdateProduct(t *testing.T) {
 	clearTable()
-	addProducts(1)
+	addProducts(3)
 
 	req, _ := http.NewRequest("GET", "/product/1", nil)
 	response := executeRequest(req)
@@ -157,15 +157,11 @@ func TestUpdateProduct(t *testing.T) {
 	if m["name"] == originalProduct["name"] {
 		t.Errorf("Expected the name to change from '%v' to '%v'. Got '%v'", originalProduct["name"], m["name"], m["name"])
 	}
-
-	if m["price"] == originalProduct["price"] {
-		t.Errorf("Expected the price to change from '%v' to '%v'. Got '%v'", originalProduct["price"], m["price"], m["price"])
-	}
 }
 
 func TestDeleteProduct(t *testing.T) {
 	clearTable()
-	addProducts(1)
+	addProducts(3)
 
 	req, _ := http.NewRequest("GET", "/product/1", nil)
 	response := executeRequest(req)

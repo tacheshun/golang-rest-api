@@ -8,6 +8,6 @@ import (
 func main() {
 	a := handlers.App{}
 	a.Initialize()
-	log.Println("Starting server localhost on port 8000...")
+	log.Println("Starting server Products localhost on port 8000...")
 	a.Run("localhost:8000")
 }
