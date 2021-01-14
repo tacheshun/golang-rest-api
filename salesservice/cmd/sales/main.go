@@ -23,12 +23,13 @@ type SalesApp struct {
 }
 
 func (s *SalesApp) initializeRoutes() {
-	s.Router.HandleFunc("/sales/{product:[0-9]+}", s.GetSaleForProduct).Methods("GET")
+	s.Router.HandleFunc("/sales/{saleId}", s.GetSale).Methods("GET")
+	s.Router.HandleFunc("/sales/product/{productId}", s.GetSaleForProduct).Methods("GET")
 }
 
 func (s *SalesApp) Initialize() {
 	var err error
-	s.DB, err = sql.Open("postgres", "user=postgres password=postgres dbname=postgres port=5433 sslmode=disable")
+	s.DB, err = sql.Open("postgres", "user=marius password=magic dbname=postgres port=5432 sslmode=disable")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -41,19 +42,19 @@ func (s *SalesApp) Run(addr string) {
 	log.Fatal(http.ListenAndServe(addr, s.Router))
 }
 
-func (s *SalesApp) GetSaleForProduct(w http.ResponseWriter, r *http.Request) {
+func (s *SalesApp) GetSale(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	productID, err := strconv.Atoi(vars["product"])
+	saleId, err := strconv.Atoi(vars["saleId"])
 	if err != nil {
-		respondWithError(w, http.StatusBadRequest, "Invalid product ID")
+		respondWithError(w, http.StatusBadRequest, "Invalid saleId ID")
 		return
 	}
 
-	sale := Sale{ProductID: productID}
-	if err := sale.getSaleForProduct(s.DB); err != nil {
+	sale := Sale{SalesID: saleId}
+	if err := sale.getSaleByID(s.DB); err != nil {
 		switch err {
 		case sql.ErrNoRows:
-			respondWithError(w, http.StatusNotFound, "Product or Sale not found")
+			respondWithError(w, http.StatusNotFound, "Sale not found")
 		default:
 			respondWithError(w, http.StatusInternalServerError, err.Error())
 		}
@@ -62,15 +63,48 @@ func (s *SalesApp) GetSaleForProduct(w http.ResponseWriter, r *http.Request) {
 
 	respondWithJSON(w, http.StatusOK, sale)
 }
+func (s *SalesApp) GetSaleForProduct(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	productId, err := strconv.Atoi(vars["productId"])
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, "Invalid productId ID")
+		return
+	}
 
-type Sale struct {
-	ProductID  int  `json:"product_id"`
-	TotalSales int  `json:"total_sales"`
+	totalSales := TotalSales{ProductID: productId}
+	if err := totalSales.getTotalSalesForProduct(s.DB); err != nil {
+		switch err {
+		case sql.ErrNoRows:
+			respondWithError(w, http.StatusNotFound, "Product not found")
+		default:
+			respondWithError(w, http.StatusInternalServerError, err.Error())
+		}
+		return
+	}
+
+	respondWithJSON(w, http.StatusOK, totalSales)
 }
 
-func (sale *Sale) getSaleForProduct(db *sql.DB) error {
-	return db.QueryRow("SELECT product_id, total_sales FROM sales WHERE product_id=$1",
-		sale.ProductID).Scan(&sale.ProductID, &sale.TotalSales)
+type Sale struct {
+	SalesID	   int  `json:"sale_id"`
+	ProductID  int  `json:"product_id"`
+	Quantity int    `json:"quantity"`
+}
+
+type TotalSales struct {
+	ProductID int `json:"product_id" db:"product_id"`
+	SalesID   int `json:"total_sales,omitempty" db:"sales_id"`
+	Total  int `json:"total_quantity_sold,omitempty" db:"quantity"`
+}
+
+func (sale *Sale) getSaleByID(db *sql.DB) error {
+	return db.QueryRow("SELECT sale_id, product_id, quantity FROM sales WHERE sale_id=$1",
+		sale.SalesID).Scan(&sale.SalesID, &sale.ProductID, &sale.Quantity)
+}
+
+func (ts *TotalSales) getTotalSalesForProduct(db *sql.DB) error {
+	return db.QueryRow("SELECT product_id, count(sale_id), SUM(quantity) as TotalQty from sales where product_id=$1 GROUP BY product_id",
+		ts.ProductID).Scan(&ts.ProductID, &ts.SalesID, &ts.Total)
 }
 
 func respondWithError(w http.ResponseWriter, code int, message string) {
