@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"github.com/gorilla/mux"
 	_ "github.com/lib/pq"
-	"github.com/tacheshun/golang-rest-api/internal/models"
+	"github.com/tacheshun/golang-rest-api/productservice/internal/models"
 	"log"
 	"net/http"
 	"strconv"

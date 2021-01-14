@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	guuid "github.com/google/uuid"
-	"github.com/tacheshun/golang-rest-api/internal/handlers"
+	"github.com/tacheshun/golang-rest-api/products/internal/handlers"
 	"log"
 	"net/http"
 	"net/http/httptest"

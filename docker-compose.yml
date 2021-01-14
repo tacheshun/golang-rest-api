@@ -1,6 +1,5 @@
 version: '3.7'
 services:
-
   postgres_db_container:
     image: postgres:13.1-alpine
     container_name: rest_api_db

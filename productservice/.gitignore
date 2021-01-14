@@ -15,6 +15,5 @@
 vendor/
 .idea/
 var/
-.aws
-.idea
+
 .DS_Store

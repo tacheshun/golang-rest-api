@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/tacheshun/golang-rest-api/internal/handlers"
+	"github.com/tacheshun/golang-rest-api/productservice/internal/handlers"
 	"log"
 )
 
