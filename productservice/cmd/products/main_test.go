@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	guuid "github.com/google/uuid"
-	"github.com/tacheshun/golang-rest-api/products/internal/handlers"
+	"github.com/tacheshun/golang-rest-api/productservice/internal/handlers"
 	"log"
 	"net/http"
 	"net/http/httptest"
@@ -41,7 +41,7 @@ func ensureTableExists() {
 
 func clearTable() {
 	_, _ = a.DB.Exec("DELETE FROM products")
-	_, _ = a.DB.Exec("ALTER SEQUENCE products_id_seq RESTART WITH 1")
+	_, _ = a.DB.Exec("ALTER SEQUENCE products_product_id_seq RESTART WITH 1")
 }
 
 func executeRequest(req *http.Request) *httptest.ResponseRecorder {
