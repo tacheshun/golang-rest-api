@@ -1,4 +1,4 @@
-# golang-rest-api
+# Golang REST API - work in progress
 Golang REST API and 2 (micro)services - work in progress
 
 ## Installation
