@@ -1,89 +1,40 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
-	"github.com/gorilla/mux"
 	_ "github.com/lib/pq"
+	pb "github.com/tacheshun/golang-rest-api/salesservice/proto"
+	"google.golang.org/grpc"
 	"log"
+	"net"
 	"net/http"
-	"strconv"
+)
+
+const (
+	port = ":50051"
 )
 
 func main() {
-	s := SalesApp{}
-	s.Initialize()
-	log.Println("Starting server Sales localhost on port 8001...")
-	s.Run("localhost:8001")
+	app := SalesApp{}
+	app.Initialize()
+	log.Println("Starting server Sales localhost on port 50051...")
+	lis, err := net.Listen("tcp", port)
+	if err != nil {
+		log.Fatalf("failed to listen: %v", err)
+	}
+	grpcServer := grpc.NewServer()
+	pb.RegisterSalesServer(grpcServer, &server{
+		repo: &app,
+	})
+	if err := grpcServer.Serve(lis); err != nil {
+		log.Fatalf("failed to serve: %v", err)
+	}
 }
 
 type SalesApp struct {
-	Router *mux.Router
-	DB     *sql.DB
-}
-
-func (s *SalesApp) initializeRoutes() {
-	s.Router.HandleFunc("/sales/{saleId}", s.GetSale).Methods("GET")
-	s.Router.HandleFunc("/sales/product/{productId}", s.GetSalesForProduct).Methods("GET")
-}
-
-func (s *SalesApp) Initialize() {
-	var err error
-	s.DB, err = sql.Open("postgres", "user=marius password=magic dbname=postgres port=5432 sslmode=disable")
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	s.Router = mux.NewRouter()
-	s.initializeRoutes()
-}
-
-func (s *SalesApp) Run(addr string) {
-	log.Fatal(http.ListenAndServe(addr, s.Router))
-}
-
-func (s *SalesApp) GetSale(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	saleId, err := strconv.Atoi(vars["saleId"])
-	if err != nil {
-		respondWithError(w, http.StatusBadRequest, "Invalid saleId ID")
-		return
-	}
-
-	sale := Sale{SalesID: saleId}
-	if err := sale.getSaleByID(s.DB); err != nil {
-		switch err {
-		case sql.ErrNoRows:
-			respondWithError(w, http.StatusNotFound, "Sale not found")
-		default:
-			respondWithError(w, http.StatusInternalServerError, err.Error())
-		}
-		return
-	}
-
-	respondWithJSON(w, http.StatusOK, sale)
-}
-
-func (s *SalesApp) GetSalesForProduct(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	productId, err := strconv.Atoi(vars["productId"])
-	if err != nil {
-		respondWithError(w, http.StatusBadRequest, "Invalid productId ID")
-		return
-	}
-
-	totalSales := TotalSales{ProductID: productId}
-	if err := totalSales.getTotalSalesForProduct(s.DB); err != nil {
-		switch err {
-		case sql.ErrNoRows:
-			respondWithError(w, http.StatusNotFound, "Product not found")
-		default:
-			respondWithError(w, http.StatusInternalServerError, err.Error())
-		}
-		return
-	}
-
-	respondWithJSON(w, http.StatusOK, totalSales)
+	DB *sql.DB
 }
 
 type Sale struct {
@@ -92,20 +43,43 @@ type Sale struct {
 	Quantity  int `json:"quantity"`
 }
 
-type TotalSales struct {
-	ProductID int `json:"product_id" db:"product_id"`
-	SalesID   int `json:"total_sales,omitempty" db:"sales_id"`
-	Total     int `json:"total_quantity_sold,omitempty" db:"quantity"`
+type ProductSales struct {
+	ProductID int `json:"product_id"`
+	Quantity  int `json:"quantity"`
 }
 
-func (sale *Sale) getSaleByID(db *sql.DB) error {
-	return db.QueryRow("SELECT sale_id, product_id, quantity FROM sales WHERE sale_id=$1",
-		sale.SalesID).Scan(&sale.SalesID, &sale.ProductID, &sale.Quantity)
+func (s *SalesApp) Initialize() {
+	var err error
+	s.DB, err = sql.Open("postgres", "user=marius password=magic dbname=postgres port=5432 sslmode=disable")
+	if err != nil {
+		log.Fatal(err)
+	}
 }
 
-func (ts *TotalSales) getTotalSalesForProduct(db *sql.DB) error {
-	return db.QueryRow("SELECT product_id, count(sale_id), SUM(quantity) as TotalQty from sales where product_id=$1 GROUP BY product_id",
-		ts.ProductID).Scan(&ts.ProductID, &ts.SalesID, &ts.Total)
+type server struct {
+	pb.UnimplementedSalesServer
+	repo *SalesApp
+}
+
+func (srv *server) GetProductWithHighestSales(ctx context.Context, in *pb.ProductIdRequest) (*pb.ProductWithSales, error) {
+	result, err := srv.repo.GetProductPlusHighestSales(in.GetProductId())
+	if err != nil {
+		return nil, err
+	}
+	out := &pb.ProductWithSales{}
+
+	out.Product = uint32(result.ProductID)
+	out.Sale = uint32(result.Quantity)
+
+	return out, nil
+}
+
+func (s *SalesApp) GetProductPlusHighestSales(_ uint32) (*ProductSales, error) {
+	var productSales ProductSales
+	_ = s.DB.QueryRow(
+		"SELECT product_id, SUM(quantity) as quantity from sales GROUP BY product_id ORDER BY quantity DESC LIMIT 1").Scan(&productSales.ProductID, &productSales.Quantity)
+
+	return &productSales, nil
 }
 
 func respondWithError(w http.ResponseWriter, code int, message string) {

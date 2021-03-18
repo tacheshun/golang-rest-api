@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"github.com/gorilla/mux"
 	_ "github.com/lib/pq"
+	"github.com/tacheshun/golang-rest-api/productservice/internal/client"
 	"github.com/tacheshun/golang-rest-api/productservice/internal/models"
 	"log"
 	"net/http"
@@ -18,6 +19,7 @@ type App struct {
 
 func (a *App) initializeRoutes() {
 	a.Router.HandleFunc("/products", a.GetProducts).Methods("GET")
+	a.Router.HandleFunc("/products/highest", a.GetProductRPCHighNoOfSales).Methods("GET")
 	a.Router.HandleFunc("/product", a.CreateProduct).Methods("POST")
 	a.Router.HandleFunc("/product/{id:[0-9]+}", a.GetProduct).Methods("GET")
 	a.Router.HandleFunc("/product/{id:[0-9]+}", a.UpdateProduct).Methods("PUT")
@@ -140,6 +142,16 @@ func (a *App) DeleteProduct(w http.ResponseWriter, r *http.Request) {
 	}
 
 	respondWithJSON(w, http.StatusOK, map[string]string{"result": "success"})
+}
+
+func (a *App) GetProductRPCHighNoOfSales(w http.ResponseWriter, e *http.Request) {
+	result, err := client.Send()
+
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "RPC request failed")
+		return
+	}
+	respondWithJSON(w, http.StatusOK, result)
 }
 
 func respondWithError(w http.ResponseWriter, code int, message string) {

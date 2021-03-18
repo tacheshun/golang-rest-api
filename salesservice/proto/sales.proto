@@ -2,7 +2,7 @@ syntax = "proto3";
 
 import "google/protobuf/timestamp.proto";
 
-option java_multiple_files = true;
+option go_package = "github.com/tacheshun/golang-rest-api;gen";
 
 package SALES;
 
@@ -10,19 +10,19 @@ message Product {
   uint32 productId = 1;
   string name = 2;
   float price = 3;
-  google.protobuf.Timestamp created = 5;
+  google.protobuf.Timestamp created = 4;
 }
 
 message Sale {
-  uint32 saleId = 3;
-  uint32 productId = 1;
-  uint32 quantity = 4;
-  google.protobuf.Timestamp created = 2;
+  uint32 saleId = 1;
+  uint32 productId = 2;
+  uint32 quantity = 3;
+  google.protobuf.Timestamp created = 4;
 }
 
 message ProductWithSales {
-  Product product = 1;
-  Sale sale = 2;
+  uint32 product = 1;
+  uint32 sale = 2;
 }
 
 message ProductIdRequest {
@@ -34,7 +34,5 @@ message ProductReply {
 }
 
 service Sales {
-  rpc GetProducts(ProductIdRequest) returns (ProductReply) {}
   rpc GetProductWithHighestSales(ProductIdRequest) returns (ProductWithSales) {}
-  rpc GetSalesByProductId (ProductIdRequest) returns (stream Sale) {}
 }

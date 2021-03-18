@@ -45,6 +45,9 @@ func (p *Product) CreateProduct(db *sql.DB) error {
 }
 
 func (p *Product) GetProducts(db *sql.DB, start, count int) ([]Product, error) {
+	var products []Product
+	products = make([]Product, 0)
+
 	rows, err := db.Query(
 		"SELECT product_id, name, price FROM products LIMIT $1 OFFSET $2",
 		count, start)
@@ -54,9 +57,6 @@ func (p *Product) GetProducts(db *sql.DB, start, count int) ([]Product, error) {
 	}
 
 	defer rows.Close()
-
-	var products []Product
-	products = make([]Product, 0)
 
 	for rows.Next() {
 		var p Product
