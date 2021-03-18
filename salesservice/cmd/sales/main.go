@@ -63,6 +63,7 @@ func (s *SalesApp) GetSale(w http.ResponseWriter, r *http.Request) {
 
 	respondWithJSON(w, http.StatusOK, sale)
 }
+
 func (s *SalesApp) GetSalesForProduct(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	productId, err := strconv.Atoi(vars["productId"])
