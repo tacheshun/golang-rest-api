@@ -1,5 +1,5 @@
-# golang-rest-api
-Golang REST API and 2 (micro)services
+# Golang REST API - work in progress
+Golang REST API and 2 (micro)services - work in progress
 
 ## Installation
 1. After cloning this repository, cd into it and run `docker-compose up -d`.
