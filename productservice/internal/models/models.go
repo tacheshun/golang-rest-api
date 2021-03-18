@@ -9,13 +9,13 @@ type Product struct {
 	ID       int       `json:"id"`
 	Name     string    `json:"name"`
 	Price    float64   `json:"price"`
-	Created  time.Time `json:"created"`
-	Modified time.Time `json:"modified"`
+	Created  time.Time `json:"-"`
+	Modified time.Time `json:"-"`
 }
 
 func (p *Product) GetProduct(db *sql.DB) error {
-	return db.QueryRow("SELECT name, price FROM products WHERE product_id=$1",
-		p.ID).Scan(&p.Name, &p.Price)
+	return db.QueryRow("SELECT product_id, name, price FROM products WHERE product_id=$1",
+		p.ID).Scan(&p.ID, &p.Name, &p.Price)
 }
 
 func (p *Product) UpdateProduct(db *sql.DB) error {
@@ -46,7 +46,7 @@ func (p *Product) CreateProduct(db *sql.DB) error {
 
 func (p *Product) GetProducts(db *sql.DB, start, count int) ([]Product, error) {
 	rows, err := db.Query(
-		"SELECT product_id, name, price, created FROM products LIMIT $1 OFFSET $2",
+		"SELECT product_id, name, price FROM products LIMIT $1 OFFSET $2",
 		count, start)
 
 	if err != nil {
@@ -56,11 +56,11 @@ func (p *Product) GetProducts(db *sql.DB, start, count int) ([]Product, error) {
 	defer rows.Close()
 
 	var products []Product
-	products = make([]Product, 0, 3)
+	products = make([]Product, 0)
 
 	for rows.Next() {
 		var p Product
-		if err := rows.Scan(&p.ID, &p.Name, &p.Price, &p.Created, &p.Modified); err != nil {
+		if err := rows.Scan(&p.ID, &p.Name, &p.Price); err != nil {
 			return nil, err
 		}
 		products = append(products, p)

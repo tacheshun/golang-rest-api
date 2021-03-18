@@ -24,7 +24,7 @@ type SalesApp struct {
 
 func (s *SalesApp) initializeRoutes() {
 	s.Router.HandleFunc("/sales/{saleId}", s.GetSale).Methods("GET")
-	s.Router.HandleFunc("/sales/product/{productId}", s.GetSaleForProduct).Methods("GET")
+	s.Router.HandleFunc("/sales/product/{productId}", s.GetSalesForProduct).Methods("GET")
 }
 
 func (s *SalesApp) Initialize() {
@@ -63,7 +63,7 @@ func (s *SalesApp) GetSale(w http.ResponseWriter, r *http.Request) {
 
 	respondWithJSON(w, http.StatusOK, sale)
 }
-func (s *SalesApp) GetSaleForProduct(w http.ResponseWriter, r *http.Request) {
+func (s *SalesApp) GetSalesForProduct(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	productId, err := strconv.Atoi(vars["productId"])
 	if err != nil {
@@ -86,15 +86,15 @@ func (s *SalesApp) GetSaleForProduct(w http.ResponseWriter, r *http.Request) {
 }
 
 type Sale struct {
-	SalesID	   int  `json:"sale_id"`
-	ProductID  int  `json:"product_id"`
-	Quantity int    `json:"quantity"`
+	SalesID   int `json:"sale_id"`
+	ProductID int `json:"product_id"`
+	Quantity  int `json:"quantity"`
 }
 
 type TotalSales struct {
 	ProductID int `json:"product_id" db:"product_id"`
 	SalesID   int `json:"total_sales,omitempty" db:"sales_id"`
-	Total  int `json:"total_quantity_sold,omitempty" db:"quantity"`
+	Total     int `json:"total_quantity_sold,omitempty" db:"quantity"`
 }
 
 func (sale *Sale) getSaleByID(db *sql.DB) error {
@@ -116,5 +116,5 @@ func respondWithJSON(w http.ResponseWriter, code int, payload interface{}) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(code)
-	w.Write(response)
+	_, _ = w.Write(response)
 }

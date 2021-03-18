@@ -1,0 +1,40 @@
+syntax = "proto3";
+
+import "google/protobuf/timestamp.proto";
+
+option java_multiple_files = true;
+
+package SALES;
+
+message Product {
+  uint32 productId = 1;
+  string name = 2;
+  float price = 3;
+  google.protobuf.Timestamp created = 5;
+}
+
+message Sale {
+  uint32 saleId = 3;
+  uint32 productId = 1;
+  uint32 quantity = 4;
+  google.protobuf.Timestamp created = 2;
+}
+
+message ProductWithSales {
+  Product product = 1;
+  Sale sale = 2;
+}
+
+message ProductIdRequest {
+  uint32 productId = 1;
+}
+
+message ProductReply {
+  repeated Product product = 1;
+}
+
+service Sales {
+  rpc GetProducts(ProductIdRequest) returns (ProductReply) {}
+  rpc GetProductWithHighestSales(ProductIdRequest) returns (ProductWithSales) {}
+  rpc GetSalesByProductId (ProductIdRequest) returns (stream Sale) {}
+}
