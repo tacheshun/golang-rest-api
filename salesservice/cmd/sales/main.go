@@ -69,7 +69,7 @@ func (srv *server) GetProductWithHighestSales(ctx context.Context, in *pb.Produc
 	out := &pb.ProductWithSales{}
 
 	out.Product = uint32(result.ProductID)
-	out.Sale = uint32(result.Quantity)
+	out.TotalSales = uint32(result.Quantity)
 
 	return out, nil
 }

@@ -144,7 +144,7 @@ func (a *App) DeleteProduct(w http.ResponseWriter, r *http.Request) {
 	respondWithJSON(w, http.StatusOK, map[string]string{"result": "success"})
 }
 
-func (a *App) GetProductRPCHighNoOfSales(w http.ResponseWriter, e *http.Request) {
+func (a *App) GetProductRPCHighNoOfSales(w http.ResponseWriter, r *http.Request) {
 	result, err := client.Send()
 
 	if err != nil {

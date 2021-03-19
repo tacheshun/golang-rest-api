@@ -22,7 +22,7 @@ message Sale {
 
 message ProductWithSales {
   uint32 product = 1;
-  uint32 sale = 2;
+  uint32 total_sales = 2;
 }
 
 message ProductIdRequest {
