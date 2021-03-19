@@ -2,6 +2,7 @@ package models
 
 import (
 	"database/sql"
+	"github.com/tacheshun/golang-rest-api/productservice/internal/client"
 	"time"
 )
 
@@ -9,7 +10,7 @@ type Product struct {
 	ID       int       `json:"id"`
 	Name     string    `json:"name"`
 	Price    float64   `json:"price"`
-	Sale     float64   `json:"total_sales,omitempty"`
+	Sale     float64   `json:"total_sales"`
 	Created  time.Time `json:"-"`
 	Modified time.Time `json:"-"`
 }
@@ -50,7 +51,7 @@ func (p *Product) GetProducts(db *sql.DB, start, count int) ([]Product, error) {
 	products = make([]Product, 0)
 
 	rows, err := db.Query(
-		"SELECT product_id, name, price FROM products LIMIT $1 OFFSET $2",
+		"SELECT product_id, name, price FROM products ORDER BY product_id LIMIT $1 OFFSET $2",
 		count, start)
 
 	if err != nil {
@@ -64,7 +65,14 @@ func (p *Product) GetProducts(db *sql.DB, start, count int) ([]Product, error) {
 		if err := rows.Scan(&p.ID, &p.Name, &p.Price); err != nil {
 			return nil, err
 		}
+		productTotalSales, err := client.GetSalesForProductRPC(uint32(p.ID))
+		if err != nil {
+			return nil, err
+		}
+		p.Sale = float64(productTotalSales["quantity"].(uint32))
+
 		products = append(products, p)
+
 	}
 
 	return products, nil
