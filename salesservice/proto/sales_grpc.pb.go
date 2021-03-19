@@ -19,6 +19,7 @@ const _ = grpc.SupportPackageIsVersion7
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type SalesClient interface {
 	GetProductWithHighestSales(ctx context.Context, in *ProductIdRequest, opts ...grpc.CallOption) (*ProductWithSales, error)
+	GetSalesForProduct(ctx context.Context, in *ProductIdRequest, opts ...grpc.CallOption) (*Sale, error)
 }
 
 type salesClient struct {
@@ -38,11 +39,21 @@ func (c *salesClient) GetProductWithHighestSales(ctx context.Context, in *Produc
 	return out, nil
 }
 
+func (c *salesClient) GetSalesForProduct(ctx context.Context, in *ProductIdRequest, opts ...grpc.CallOption) (*Sale, error) {
+	out := new(Sale)
+	err := c.cc.Invoke(ctx, "/SALES.Sales/GetSalesForProduct", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // SalesServer is the server API for Sales service.
 // All implementations must embed UnimplementedSalesServer
 // for forward compatibility
 type SalesServer interface {
 	GetProductWithHighestSales(context.Context, *ProductIdRequest) (*ProductWithSales, error)
+	GetSalesForProduct(context.Context, *ProductIdRequest) (*Sale, error)
 	mustEmbedUnimplementedSalesServer()
 }
 
@@ -52,6 +63,9 @@ type UnimplementedSalesServer struct {
 
 func (UnimplementedSalesServer) GetProductWithHighestSales(context.Context, *ProductIdRequest) (*ProductWithSales, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetProductWithHighestSales not implemented")
+}
+func (UnimplementedSalesServer) GetSalesForProduct(context.Context, *ProductIdRequest) (*Sale, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetSalesForProduct not implemented")
 }
 func (UnimplementedSalesServer) mustEmbedUnimplementedSalesServer() {}
 
@@ -84,6 +98,24 @@ func _Sales_GetProductWithHighestSales_Handler(srv interface{}, ctx context.Cont
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Sales_GetSalesForProduct_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ProductIdRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SalesServer).GetSalesForProduct(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/SALES.Sales/GetSalesForProduct",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SalesServer).GetSalesForProduct(ctx, req.(*ProductIdRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Sales_ServiceDesc is the grpc.ServiceDesc for Sales service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -94,6 +126,10 @@ var Sales_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetProductWithHighestSales",
 			Handler:    _Sales_GetProductWithHighestSales_Handler,
+		},
+		{
+			MethodName: "GetSalesForProduct",
+			Handler:    _Sales_GetSalesForProduct_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

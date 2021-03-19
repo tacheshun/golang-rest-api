@@ -35,4 +35,5 @@ message ProductReply {
 
 service Sales {
   rpc GetProductWithHighestSales(ProductIdRequest) returns (ProductWithSales) {}
+  rpc GetSalesForProduct(ProductIdRequest) returns (Sale) {}
 }

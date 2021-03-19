@@ -7,14 +7,14 @@ import (
 	"log"
 	"time"
 
+	otgrpc "github.com/opentracing-contrib/go-grpc"
 	opentracing "github.com/opentracing/opentracing-go"
 	pb "github.com/tacheshun/golang-rest-api/salesservice/proto"
 	"github.com/uber/jaeger-client-go/config"
 )
 
 const (
-	address     = "localhost:50051"
-	defaultName = "world"
+	address     = ":50051"
 )
 
 func InitTracer(serviceName, host string) (opentracing.Tracer, error) {
@@ -38,9 +38,14 @@ func InitTracer(serviceName, host string) (opentracing.Tracer, error) {
 }
 
 func Send() (interface{}, error) {
-
+	tracer, err := InitTracer("product", "127.0.0.1:16686")
+	if err != nil {
+		panic("cannot start tracer")
+	}
 	// Set up a connection to the server.
-	conn, err := grpc.Dial(address, grpc.WithInsecure(), grpc.WithBlock())
+	conn, err := grpc.Dial(address, grpc.WithInsecure(), grpc.WithUnaryInterceptor(
+		otgrpc.OpenTracingClientInterceptor(tracer)), grpc.WithStreamInterceptor(
+		otgrpc.OpenTracingStreamClientInterceptor(tracer)), grpc.WithBlock())
 	if err != nil {
 		log.Fatalf("did not connect: %v", err)
 	}
@@ -49,15 +54,40 @@ func Send() (interface{}, error) {
 
 	// Contact the server and print out its response.
 	var productId uint32
-	productId = 1
+	productId = 2
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 	r, err := c.GetProductWithHighestSales(ctx, &pb.ProductIdRequest{ProductId: productId})
 	if err != nil {
 		log.Fatalf("could not fetch: %v", err)
 	}
-	fmt.Println(r)
-	log.Printf("Product wth the highest sales is: %v, %v", r.Product, r.TotalSales)
 
 	return r, nil
+}
+
+func GetSalesForProductRPC(productId uint32) (map[string]interface{}, error) {
+	tracer, err := InitTracer("product", "127.0.0.1:16686")
+	if err != nil {
+		panic("cannot start tracer")
+	}
+	// Set up a connection to the server.
+	conn, err := grpc.Dial(address, grpc.WithInsecure(), grpc.WithUnaryInterceptor(
+		otgrpc.OpenTracingClientInterceptor(tracer)), grpc.WithStreamInterceptor(
+		otgrpc.OpenTracingStreamClientInterceptor(tracer)), grpc.WithBlock())
+	if err != nil {
+		log.Fatalf("did not connect: %v", err)
+	}
+	defer conn.Close()
+	c := pb.NewSalesClient(conn)
+
+	// Contact the server and print out its response.
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+
+	res, err := c.GetSalesForProduct(ctx, &pb.ProductIdRequest{ProductId: productId})
+	if err != nil {
+		log.Fatalf("could not fetch: %v", err)
+	}
+
+	return map[string]interface{}{"productId":res.ProductId, "quantity":res.Quantity}, nil
 }

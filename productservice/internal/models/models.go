@@ -9,6 +9,7 @@ type Product struct {
 	ID       int       `json:"id"`
 	Name     string    `json:"name"`
 	Price    float64   `json:"price"`
+	Sale     float64   `json:"total_sales,omitempty"`
 	Created  time.Time `json:"-"`
 	Modified time.Time `json:"-"`
 }

@@ -50,6 +50,11 @@ func (a *App) GetProduct(w http.ResponseWriter, r *http.Request) {
 	}
 
 	p := models.Product{ID: id}
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, "RPC request failed")
+		return
+	}
+
 	if err := p.GetProduct(a.DB); err != nil {
 		switch err {
 		case sql.ErrNoRows:
@@ -59,6 +64,8 @@ func (a *App) GetProduct(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
+	productTotalSales, err := client.GetSalesForProductRPC(uint32(id))
+	p.Sale = float64(productTotalSales["quantity"].(uint32))
 
 	respondWithJSON(w, http.StatusOK, p)
 }

@@ -8,6 +8,7 @@ require (
 	github.com/google/uuid v1.1.4
 	github.com/gorilla/mux v1.8.0
 	github.com/lib/pq v1.8.0
+	github.com/opentracing-contrib/go-grpc v0.0.0-20210225150812-73cb765af46e
 	github.com/opentracing/opentracing-go v1.2.0
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/uber/jaeger-client-go v2.25.0+incompatible
